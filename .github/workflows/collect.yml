@@ -1,5 +1,8 @@
 name: 공고 수집
 
+# 데이터는 별도 브랜치(data)에 저장합니다.
+# 저장소 Secrets에 DATA_REPO / DATA_TOKEN 이 있으면 그 (비공개) 저장소의 data 브랜치에,
+# 없으면 이 저장소의 data 브랜치에 저장합니다.
 on:
   schedule:
     - cron: "0 22 * * *"   # 매일 07:00 KST
@@ -17,6 +20,9 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DATA_REPO: ${{ secrets.DATA_REPO }}
+      DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,15 +35,23 @@ jobs:
         run: |
           git config --global user.name "grant-bot"
           git config --global user.email "grant-bot@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin data; then
-            git fetch origin data
-            git worktree add databranch origin/data
-            cd databranch && git checkout -B data origin/data
+          if [ -n "$DATA_REPO" ]; then
+            URL="https://x-access-token:${DATA_TOKEN}@github.com/${DATA_REPO}.git"
           else
-            git worktree add --detach databranch
-            cd databranch && git checkout --orphan data && git rm -rf . -q
+            URL="$(git remote get-url origin)"
+          fi
+          mkdir databranch && cd databranch && git init -q
+          git remote add origin "$URL"
+          HDR="$(git -C .. config --get http.https://github.com/.extraheader || true)"
+          if [ -z "$DATA_REPO" ] && [ -n "$HDR" ]; then
+            git config http.https://github.com/.extraheader "$HDR"
+          fi
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git fetch -q origin data && git checkout -q -B data origin/data
+          else
+            git checkout -q --orphan data
             mkdir -p data && echo "수집 데이터 전용 브랜치" > README.md
-            git add README.md && git commit -m "data 브랜치 생성" && git push -u origin data
+            git add README.md && git commit -q -m "data 브랜치 생성" && git push -q -u origin data
           fi
 
       - name: 수집
@@ -51,5 +65,5 @@ jobs:
         run: |
           git add data/notices.csv data/runs.csv 2>/dev/null || true
           git diff --cached --quiet && exit 0
-          git commit -m "공고 수집 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
-          for i in 1 2 3; do git pull --rebase origin data && git push origin HEAD:data && break; sleep 5; done
+          git commit -q -m "공고 수집 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          for i in 1 2 3; do git pull -q --rebase origin data && git push -q origin HEAD:data && break; sleep 5; done
