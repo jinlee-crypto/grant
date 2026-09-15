@@ -1,19 +1,38 @@
 """출처 공통 도구: HTTP 세션, 텍스트 정리, 마감일 추출."""
 import re
+import ssl
 import time
 from datetime import date
 
 import requests
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-UA = "Mozilla/5.0 (JNUH-BRI grant dashboard; contact: 의생명연구원)"
+# HTTP 헤더는 ASCII만 허용 — 한글 넣지 말 것
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+      "Chrome/124.0 Safari/537.36 JNUH-BRI-grant-dashboard")
 DELAY = 0.7
+
+
+class _LegacyTLS(HTTPAdapter):
+    """일부 공공기관 서버(구형 TLS 설정)와의 SSL 오류 대응."""
+
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        ctx.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0x4)
+        kwargs["ssl_context"] = ctx
+        return super().init_poolmanager(*args, **kwargs)
 
 
 class Fetcher:
     def __init__(self, delay=DELAY):
         self.s = requests.Session()
-        self.s.headers["User-Agent"] = UA
+        self.s.headers.update({"User-Agent": UA, "Accept-Language": "ko-KR,ko;q=0.9"})
+        self.s.mount("https://", _LegacyTLS(max_retries=Retry(total=3, backoff_factor=2,
+                                                              status_forcelist=[500, 502, 503, 504],
+                                                              allowed_methods=None)))
         self.delay = delay
 
     def get(self, url, **params):
