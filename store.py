@@ -125,7 +125,10 @@ class Store:
     # 수집용
     def known(self, ancm_id):
         i = self._pos.get(ancm_id)
-        return None if i is None else self.df["notices"].iloc[i].to_dict()
+        if i is None:
+            return None
+        n = len(self.df["notices"])
+        return dict(self._new_rows[i - n]) if i >= n else self.df["notices"].iloc[i].to_dict()
 
     def upsert(self, it):
         now = _now()
