@@ -1,0 +1,7 @@
+run_at,source,n_new,n_updated,error
+2026-09-15T08:49:03,IRIS,0,0,'latin-1' codec can't encode characters in position 48-53: ordinal not in range(256)
+2026-09-15T08:49:04,한국연구재단,0,0,'latin-1' codec can't encode characters in position 48-53: ordinal not in range(256)
+2026-09-15T08:49:07,HT Dream,0,0,'latin-1' codec can't encode characters in position 48-53: ordinal not in range(256)
+2026-09-15T08:49:08,KHIDI,0,0,'latin-1' codec can't encode characters in position 48-53: ordinal not in range(256)
+2026-09-15T08:49:10,NECA,0,0,"HTTPSConnectionPool(host='www.neca.re.kr', port=443): Max retries exceeded with url: /lay1/bbs/S1T12C49/A/12/list.do?cpage=1 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF"
+2026-09-15T08:49:11,환경부(KEITI),0,0,'latin-1' codec can't encode characters in position 48-53: ordinal not in range(256)
