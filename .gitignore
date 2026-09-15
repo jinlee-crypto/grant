@@ -1,0 +1,7 @@
+__pycache__/
+.pytest_cache/
+.streamlit/secrets.toml
+demo_data/
+databranch/
+collect.log
+*.db
